@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- outer record body -->
+  <circle cx="16" cy="16" r="16" fill="#111"/>
+  <!-- groove rings -->
+  <circle cx="16" cy="16" r="13.5" fill="none" stroke="#64baff" stroke-width="0.6" opacity="0.25"/>
+  <circle cx="16" cy="16" r="11.5" fill="none" stroke="#64baff" stroke-width="0.6" opacity="0.35"/>
+  <circle cx="16" cy="16" r="9.5"  fill="none" stroke="#64baff" stroke-width="0.6" opacity="0.45"/>
+  <circle cx="16" cy="16" r="7.5"  fill="none" stroke="#64baff" stroke-width="0.6" opacity="0.55"/>
+  <!-- label area -->
+  <circle cx="16" cy="16" r="5.5" fill="#64baff" opacity="0.9"/>
+  <!-- centre hole -->
+  <circle cx="16" cy="16" r="1.8" fill="#111"/>
+</svg>
