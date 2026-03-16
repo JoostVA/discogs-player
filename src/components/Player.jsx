@@ -110,9 +110,19 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
       let data
       try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data }
       catch { return }
-      if (!data || data.event !== 'onStateChange') return
-      if (data.info === 1) { hasStartedRef.current = true }   // playing
-      if (data.info === 0 && hasStartedRef.current) {         // ended
+      if (!data) return
+
+      // YouTube sends either onStateChange or infoDelivery (periodic poll)
+      let state = null
+      if (data.event === 'onStateChange' && typeof data.info === 'number') {
+        state = data.info
+      } else if (data.event === 'infoDelivery' && typeof data.info?.playerState === 'number') {
+        state = data.info.playerState
+      }
+      if (state === null) return
+
+      if (state === 1) { hasStartedRef.current = true }   // playing
+      if (state === 0 && hasStartedRef.current) {         // ended
         hasStartedRef.current = false
         onEndedRef.current?.()
       }
@@ -248,7 +258,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
             key={videoId}
             ref={iframeRef}
             className="player-bar__iframe"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             title={track.title}
