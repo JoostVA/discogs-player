@@ -1018,6 +1018,18 @@ a:hover { text-decoration: underline; }
   justify-content: center;
 }
 
+.player-bar__yt-container {
+  position: absolute;
+  inset: 0;
+}
+.player-bar__yt-container iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  display: block;
+}
+
+/* kept for backward compat – no longer used but harmless */
 .player-bar__iframe {
   position: absolute;
   inset: 0;

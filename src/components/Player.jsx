@@ -19,6 +19,25 @@ function buildQuery(track, albumInfo) {
     .join(' ')
 }
 
+// ── Singleton: load the YouTube IFrame API script once ────────
+let ytApiReadyPromise = null
+function loadYTApi() {
+  if (ytApiReadyPromise) return ytApiReadyPromise
+  if (window.YT?.Player) {
+    ytApiReadyPromise = Promise.resolve()
+    return ytApiReadyPromise
+  }
+  ytApiReadyPromise = new Promise(resolve => {
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement('script')
+      tag.src = 'https://www.youtube.com/iframe_api'
+      document.head.appendChild(tag)
+    }
+    window.onYouTubeIframeAPIReady = resolve
+  })
+  return ytApiReadyPromise
+}
+
 export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, onOverrideChange, onEnded }) {
   const [videoId, setVideoId] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -34,7 +53,8 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   const [pasteValue, setPasteValue] = useState('')
   const [pasteError, setPasteError] = useState('')
 
-  const iframeRef = useRef(null)
+  const ytPlayerRef = useRef(null)      // YT.Player instance
+  const playerContainerRef = useRef(null) // div that YT renders its iframe into
   const prevTrackRef = useRef(null)
   const pickerRef = useRef(null)
   const queryInputRef = useRef(null)
@@ -88,48 +108,67 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
     setIsOverridden(!!overrides?.[overrideKey])
   }, [overrides, overrideKey])
 
-  // ── Pause / resume via YouTube IFrame API postMessage ────────
-  useEffect(() => {
-    if (!videoId) return
-    iframeRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: 'command', func: isPlaying ? 'playVideo' : 'pauseVideo', args: [] }),
-      '*'
-    )
-  }, [isPlaying, videoId])
-
   // ── Keep onEndedRef current ──────────────────────────────────
   useEffect(() => { onEndedRef.current = onEnded }, [onEnded])
 
-  // ── Reset "has started" flag each time a new video loads ─────
-  useEffect(() => { hasStartedRef.current = false }, [videoId])
+  // ── Preload the YT IFrame API on mount ───────────────────────
+  useEffect(() => { loadYTApi() }, [])
 
-  // ── Listen for YouTube IFrame state-change postMessages ──────
+  // ── Create / update YT player when videoId changes ───────────
   useEffect(() => {
-    function handleMessage(event) {
-      if (!event.origin.includes('youtube.com')) return
-      let data
-      try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data }
-      catch { return }
-      if (!data) return
-
-      // YouTube sends either onStateChange or infoDelivery (periodic poll)
-      let state = null
-      if (data.event === 'onStateChange' && typeof data.info === 'number') {
-        state = data.info
-      } else if (data.event === 'infoDelivery' && typeof data.info?.playerState === 'number') {
-        state = data.info.playerState
-      }
-      if (state === null) return
-
-      if (state === 1) { hasStartedRef.current = true }   // playing
-      if (state === 0 && hasStartedRef.current) {         // ended
-        hasStartedRef.current = false
-        onEndedRef.current?.()
-      }
+    if (!videoId) {
+      ytPlayerRef.current?.stopVideo?.()
+      return
     }
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-  }, []) // register once; latest onEnded always read via ref
+
+    hasStartedRef.current = false
+    let cancelled = false
+
+    loadYTApi().then(() => {
+      if (cancelled || !playerContainerRef.current) return
+
+      if (ytPlayerRef.current?.loadVideoById) {
+        // Player already exists — just swap the video
+        ytPlayerRef.current.loadVideoById(videoId)
+      } else {
+        // Create a fresh player inside the container div
+        ytPlayerRef.current = new window.YT.Player(playerContainerRef.current, {
+          videoId,
+          width: '100%',
+          height: '100%',
+          playerVars: { autoplay: 1, rel: 0 },
+          events: {
+            onStateChange: (e) => {
+              if (e.data === 1) hasStartedRef.current = true   // playing
+              if (e.data === 0 && hasStartedRef.current) {    // ended
+                hasStartedRef.current = false
+                onEndedRef.current?.()
+              }
+            },
+            onError: () => setError('Video could not be loaded.'),
+          },
+        })
+      }
+    })
+
+    return () => { cancelled = true }
+  }, [videoId])
+
+  // ── Destroy YT player on unmount ────────────────────────────
+  useEffect(() => {
+    return () => {
+      ytPlayerRef.current?.destroy?.()
+      ytPlayerRef.current = null
+    }
+  }, [])
+
+  // ── Play / pause via YT Player API ───────────────────────────
+  useEffect(() => {
+    const player = ytPlayerRef.current
+    if (!player?.playVideo) return
+    if (isPlaying) player.playVideo()
+    else player.pauseVideo()
+  }, [isPlaying, videoId])
 
   // ── Close picker on click-outside ───────────────────────────
   useEffect(() => {
@@ -253,17 +292,12 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
         {error && !loading && (
           <div className="player-bar__status player-bar__status--error">{error}</div>
         )}
-        {videoId && !loading && (
-          <iframe
-            key={videoId}
-            ref={iframeRef}
-            className="player-bar__iframe"
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title={track.title}
-          />
-        )}
+        {/* Container is always in DOM so playerContainerRef stays stable */}
+        <div
+          ref={playerContainerRef}
+          className="player-bar__yt-container"
+          style={{ visibility: (loading || error || !videoId) ? 'hidden' : 'visible' }}
+        />
       </div>
 
       {/* ── Right: override section ── */}
