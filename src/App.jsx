@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Settings from './components/Settings'
 import CollectionBrowser from './components/CollectionBrowser'
 import RecordDetail from './components/RecordDetail'
@@ -33,6 +33,16 @@ export default function App() {
   const [overrides, setOverrides] = useState(loadOverrides)
   const [playlists, setPlaylists] = useState(loadPlaylists)
   const [showPlaylist, setShowPlaylist] = useState(false)
+  const [playContext, setPlayContext] = useState(null)
+
+  // Keep stable refs for values needed inside handleTrackEnd without
+  // forcing it to be recreated on every state change
+  const playContextRef = useRef(null)
+  const currentAlbumInfoRef = useRef(null)
+  const playlistsRef = useRef(playlists)
+  playContextRef.current = playContext
+  currentAlbumInfoRef.current = currentAlbumInfo
+  playlistsRef.current = playlists
 
   function handleOverrideChange() {
     setOverrides(loadOverrides())
@@ -58,11 +68,62 @@ export default function App() {
     setSelectedRelease(null)
   }
 
-  const handlePlay = useCallback((track, albumInfo) => {
+  const handlePlay = useCallback((track, albumInfo, context = null) => {
     setCurrentTrack(track)
     setCurrentAlbumInfo(albumInfo)
     setIsPlaying(true)
+    setPlayContext(context)
   }, [])
+
+  // Called by Player when the YouTube video ends naturally
+  const handleTrackEnd = useCallback(() => {
+    const ctx = playContextRef.current
+    if (!ctx) return
+
+    if (ctx.type === 'record') {
+      const { releaseId, currentIndex } = ctx
+      try {
+        const cached = sessionStorage.getItem(`discogs_release_${releaseId}`)
+        if (!cached) return
+        const data = JSON.parse(cached)
+        const tracks = data.tracklist?.filter(t => t.type_ !== 'index') ?? []
+        let nextIdx = currentIndex + 1
+        // skip any heading rows
+        while (nextIdx < tracks.length && tracks[nextIdx].type_ === 'heading') nextIdx++
+        if (nextIdx < tracks.length) {
+          handlePlay(tracks[nextIdx], currentAlbumInfoRef.current, {
+            type: 'record', releaseId, currentIndex: nextIdx,
+          })
+        }
+      } catch {}
+      return
+    }
+
+    if (ctx.type === 'playlist') {
+      const { playlistId, currentItemIndex } = ctx
+      const pl = playlistsRef.current[playlistId]
+      if (!pl) return
+      for (let i = currentItemIndex + 1; i < pl.items.length; i++) {
+        const item = pl.items[i]
+        if (item.type === 'record' && item.selectedTrack) {
+          const snap = item.snapshot
+          const artist = snap.artists?.map(a => a.name.replace(/\s*\(\d+\)$/, '')).join(', ') ?? ''
+          const albumInfo = {
+            artist,
+            title: snap.title ?? '',
+            coverUrl: snap.cover_image && !snap.cover_image.includes('spacer.gif')
+              ? snap.cover_image : null,
+            year: snap.year ?? null,
+            releaseId: item.releaseId,
+          }
+          handlePlay(item.selectedTrack, albumInfo, {
+            type: 'playlist', playlistId, currentItemIndex: i,
+          })
+          return
+        }
+      }
+    }
+  }, [handlePlay])
 
   const handleTogglePlay = useCallback(() => {
     setIsPlaying(p => !p)
@@ -131,6 +192,7 @@ export default function App() {
           isPlaying={isPlaying}
           overrides={overrides}
           onOverrideChange={handleOverrideChange}
+          onEnded={handleTrackEnd}
         />
       )}
     </div>

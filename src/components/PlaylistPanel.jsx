@@ -363,8 +363,9 @@ function PlaylistDetailView({ playlist, playlists, currentTrack, isPlaying, toke
 
   // Compute per-item record numbers (sections don't count)
   let recordCounter = 0
-  const numberedItems = items.map(item => ({
+  const numberedItems = items.map((item, itemIdx) => ({
     item,
+    itemIdx,
     num: item.type === 'record' ? ++recordCounter : null,
   }))
 
@@ -390,7 +391,7 @@ function PlaylistDetailView({ playlist, playlists, currentTrack, isPlaying, toke
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-            {numberedItems.map(({ item, num }) => (
+            {numberedItems.map(({ item, itemIdx, num }) => (
               <SortableItem key={item.id} id={item.id}>
                 {({ dragHandleProps }) => (
                   item.type === 'section'
@@ -417,7 +418,11 @@ function PlaylistDetailView({ playlist, playlists, currentTrack, isPlaying, toke
                         isPlaying={isPlaying}
                         token={token}
                         overrides={overrides}
-                        onPlay={onPlay}
+                        onPlay={(track, albumInfo) => onPlay(track, albumInfo, {
+                          type: 'playlist',
+                          playlistId: playlist.id,
+                          currentItemIndex: itemIdx,
+                        })}
                         onTogglePlay={onTogglePlay}
                         onSelectTrack={track => {
                           setItemSelectedTrack(playlist.id, item.id, track)

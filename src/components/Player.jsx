@@ -19,7 +19,7 @@ function buildQuery(track, albumInfo) {
     .join(' ')
 }
 
-export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, onOverrideChange }) {
+export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, onOverrideChange, onEnded }) {
   const [videoId, setVideoId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -38,6 +38,8 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   const prevTrackRef = useRef(null)
   const pickerRef = useRef(null)
   const queryInputRef = useRef(null)
+  const hasStartedRef = useRef(false)   // true once YT fires "playing" (state 1)
+  const onEndedRef = useRef(onEnded)    // always points to latest onEnded callback
 
   const overrideKey = track && albumInfo?.releaseId
     ? makeOverrideKey(albumInfo.releaseId, track)
@@ -94,6 +96,30 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
       '*'
     )
   }, [isPlaying, videoId])
+
+  // ── Keep onEndedRef current ──────────────────────────────────
+  useEffect(() => { onEndedRef.current = onEnded }, [onEnded])
+
+  // ── Reset "has started" flag each time a new video loads ─────
+  useEffect(() => { hasStartedRef.current = false }, [videoId])
+
+  // ── Listen for YouTube IFrame state-change postMessages ──────
+  useEffect(() => {
+    function handleMessage(event) {
+      if (!event.origin.includes('youtube.com')) return
+      let data
+      try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data }
+      catch { return }
+      if (!data || data.event !== 'onStateChange') return
+      if (data.info === 1) { hasStartedRef.current = true }   // playing
+      if (data.info === 0 && hasStartedRef.current) {         // ended
+        hasStartedRef.current = false
+        onEndedRef.current?.()
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, []) // register once; latest onEnded always read via ref
 
   // ── Close picker on click-outside ───────────────────────────
   useEffect(() => {

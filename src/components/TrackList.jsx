@@ -34,7 +34,7 @@ export default function TrackList({ tracks, currentTrack, isPlaying, overrideKey
             </span>
             <button
               className="track-list__play-btn"
-              onClick={() => isCurrentTrack ? onTogglePlay?.() : onPlay(track)}
+              onClick={() => isCurrentTrack ? onTogglePlay?.() : onPlay(track, idx)}
               title={isTrackPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
             >
               {isTrackPlaying ? '⏸' : '▶'}

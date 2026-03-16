@@ -124,7 +124,11 @@ export default function RecordDetail({
             isPlaying={isPlaying}
             overrideKeys={overrideKeys}
             releaseId={releaseId}
-            onPlay={track => onPlay(track, { artist, title, coverUrl, year, releaseId })}
+            onPlay={(track, idx) => onPlay(
+              track,
+              { artist, title, coverUrl, year, releaseId },
+              { type: 'record', releaseId, currentIndex: idx },
+            )}
             onTogglePlay={onTogglePlay}
           />
         )}
