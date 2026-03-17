@@ -116,10 +116,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
 
   // ── Create / update YT player when videoId changes ───────────
   useEffect(() => {
-    if (!videoId) {
-      ytPlayerRef.current?.stopVideo?.()
-      return
-    }
+    if (!videoId) return   // nothing to do; play/pause effect is also guarded
 
     hasStartedRef.current = false
     let cancelled = false
@@ -165,7 +162,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   // ── Play / pause via YT Player API ───────────────────────────
   useEffect(() => {
     const player = ytPlayerRef.current
-    if (!player?.playVideo) return
+    if (!player?.playVideo || !videoId) return
     if (isPlaying) player.playVideo()
     else player.pauseVideo()
   }, [isPlaying, videoId])
