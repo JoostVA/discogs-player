@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import {
   getAllTags, getTagUsageCount,
   renameTagGlobally, deleteTagGlobally,
+  DOT_COLORS, getTagColor, setTagColor,
 } from '../services/tags'
 
-export default function TagFilter({ options, selected, onChange, tags, onTagsChange }) {
+export default function TagFilter({ options, selected, onChange, tags, onTagsChange, tagColors }) {
   const [open, setOpen] = useState(false)
   const [view, setView] = useState('list')   // 'list' | 'manager'
   const [search, setSearch] = useState('')
   const [renamingTag, setRenamingTag] = useState(null)  // tag string being renamed
   const [renameValue, setRenameValue] = useState('')
+  const [coloringTag, setColoringTag] = useState(null)  // tag whose color is being changed
   const searchRef = useRef(null)
   const renameRef = useRef(null)
   const ref = useRef(null)
@@ -21,6 +23,7 @@ export default function TagFilter({ options, selected, onChange, tags, onTagsCha
       setSearch('')
       setRenamingTag(null)
       setRenameValue('')
+      setColoringTag(null)
       return
     }
     setTimeout(() => searchRef.current?.focus(), 0)
@@ -59,7 +62,7 @@ export default function TagFilter({ options, selected, onChange, tags, onTagsCha
   function handleRenameConfirm(oldTag) {
     const newTag = renameValue.trim().toLowerCase()
     if (!newTag || newTag === oldTag) { setRenamingTag(null); return }
-    const updated = renameTagGlobally(tags, oldTag, newTag)
+    renameTagGlobally(tags, oldTag, newTag)
     // If old tag was selected in filter, swap it for new tag
     if (selected.has(oldTag)) {
       const next = new Set(selected)
@@ -72,12 +75,18 @@ export default function TagFilter({ options, selected, onChange, tags, onTagsCha
   }
 
   function handleDelete(tag) {
-    const updated = deleteTagGlobally(tags, tag)
+    deleteTagGlobally(tags, tag)
     if (selected.has(tag)) {
       const next = new Set(selected)
       next.delete(tag)
       onChange(next)
     }
+    onTagsChange()
+  }
+
+  function handleColorChange(tag, color) {
+    setTagColor(tag, color)
+    setColoringTag(null)
     onTagsChange()
   }
 
@@ -139,6 +148,10 @@ export default function TagFilter({ options, selected, onChange, tags, onTagsCha
                       onChange={() => toggle(s)}
                       className="tag-ms__hidden-input"
                     />
+                    <span
+                      className="tag-dot tag-dot--sm"
+                      style={{ background: getTagColor(tagColors, s) }}
+                    />
                     {s}
                   </label>
                 ))}
@@ -166,52 +179,82 @@ export default function TagFilter({ options, selected, onChange, tags, onTagsCha
                 )}
                 {allTagsList.map(tag => (
                   <div key={tag} className="tag-manager__item">
-                    {renamingTag === tag ? (
-                      <>
-                        <input
-                          ref={renameRef}
-                          className="tag-manager__rename-input"
-                          value={renameValue}
-                          onChange={e => setRenameValue(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleRenameConfirm(tag)
-                            if (e.key === 'Escape') setRenamingTag(null)
-                          }}
-                          onBlur={() => handleRenameConfirm(tag)}
-                        />
+                    {/* Color dot / inline palette */}
+                    {coloringTag === tag ? (
+                      <div className="tag-manager__color-palette">
+                        {DOT_COLORS.map(color => (
+                          <button
+                            key={color}
+                            className="tag-dot-swatch"
+                            style={{ background: color }}
+                            onClick={() => handleColorChange(tag, color)}
+                            title="Set color"
+                          />
+                        ))}
                         <button
                           className="tag-manager__btn"
-                          onMouseDown={e => { e.preventDefault(); handleRenameConfirm(tag) }}
-                          title="Confirm rename"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          className="tag-manager__btn"
-                          onMouseDown={e => { e.preventDefault(); setRenamingTag(null) }}
+                          onClick={() => setColoringTag(null)}
                           title="Cancel"
                         >
                           ✕
                         </button>
-                      </>
+                      </div>
                     ) : (
                       <>
-                        <span className="tag-manager__name">{tag}</span>
-                        <span className="tag-manager__count">{getTagUsageCount(tags, tag)}</span>
                         <button
-                          className="tag-manager__btn"
-                          onClick={() => { setRenamingTag(tag); setRenameValue(tag) }}
-                          title="Rename tag"
-                        >
-                          ✎
-                        </button>
-                        <button
-                          className="tag-manager__btn tag-manager__btn--delete"
-                          onClick={() => handleDelete(tag)}
-                          title="Delete tag globally"
-                        >
-                          ✕
-                        </button>
+                          className="tag-dot tag-dot--sm tag-dot--clickable"
+                          style={{ background: getTagColor(tagColors, tag) }}
+                          onClick={() => setColoringTag(tag)}
+                          title="Change color"
+                        />
+                        {renamingTag === tag ? (
+                          <>
+                            <input
+                              ref={renameRef}
+                              className="tag-manager__rename-input"
+                              value={renameValue}
+                              onChange={e => setRenameValue(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleRenameConfirm(tag)
+                                if (e.key === 'Escape') setRenamingTag(null)
+                              }}
+                              onBlur={() => handleRenameConfirm(tag)}
+                            />
+                            <button
+                              className="tag-manager__btn"
+                              onMouseDown={e => { e.preventDefault(); handleRenameConfirm(tag) }}
+                              title="Confirm rename"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              className="tag-manager__btn"
+                              onMouseDown={e => { e.preventDefault(); setRenamingTag(null) }}
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="tag-manager__name">{tag}</span>
+                            <span className="tag-manager__count">{getTagUsageCount(tags, tag)}</span>
+                            <button
+                              className="tag-manager__btn"
+                              onClick={() => { setRenamingTag(tag); setRenameValue(tag) }}
+                              title="Rename tag"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              className="tag-manager__btn tag-manager__btn--delete"
+                              onClick={() => handleDelete(tag)}
+                              title="Delete tag globally"
+                            >
+                              ✕
+                            </button>
+                          </>
+                        )}
                       </>
                     )}
                   </div>

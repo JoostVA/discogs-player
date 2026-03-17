@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import AddToPlaylistPopover from './AddToPlaylistPopover'
-import { getReleaseTags } from '../services/tags'
+import { getReleaseTags, getTagColor } from '../services/tags'
 
 const MAX_CHIPS = 3
 
 const PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='100' fill='%23222'/%3E%3Ccircle cx='100' cy='100' r='60' fill='%23111'/%3E%3Ccircle cx='100' cy='100' r='8' fill='%23333'/%3E%3C/svg%3E"
 
-export default function RecordCard({ release, isActive, onClick, playlists, onPlaylistsChange, tags }) {
+export default function RecordCard({ release, isActive, onClick, playlists, onPlaylistsChange, tags, tagColors }) {
   const [showPopover, setShowPopover] = useState(false)
   const cardTags = getReleaseTags(tags ?? {}, release.basic_information.id)
 
@@ -41,6 +41,18 @@ export default function RecordCard({ release, isActive, onClick, playlists, onPl
           <div className="record-card__overlay">
             <span className="record-card__play-icon">▶</span>
           </div>
+          {cardTags.length > 0 && (
+            <div className="record-card__dot-stickers">
+              {cardTags.map(t => (
+                <span
+                  key={t}
+                  className="record-card__dot-sticker"
+                  style={{ background: getTagColor(tagColors, t) }}
+                  title={t}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <div className="record-card__info">
           <span className="record-card__artist">{artist}</span>
@@ -52,7 +64,13 @@ export default function RecordCard({ release, isActive, onClick, playlists, onPl
       {cardTags.length > 0 && (
         <div className="record-card__tags">
           {cardTags.slice(0, MAX_CHIPS).map(t => (
-            <span className="tag-chip" key={t}>{t}</span>
+            <span className="tag-chip" key={t}>
+              <span
+                className="tag-dot tag-dot--sm"
+                style={{ background: getTagColor(tagColors, t) }}
+              />
+              {t}
+            </span>
           ))}
           {cardTags.length > MAX_CHIPS && (
             <span className="record-card__tags-more">+{cardTags.length - MAX_CHIPS}</span>

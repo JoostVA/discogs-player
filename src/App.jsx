@@ -6,7 +6,7 @@ import PlaylistPanel from './components/PlaylistPanel'
 import Player from './components/Player'
 import { loadOverrides } from './services/overrides'
 import { loadPlaylists } from './services/playlists'
-import { loadTags } from './services/tags'
+import { loadTags, loadTagColors } from './services/tags'
 
 const LS_USERNAME = 'discogs_username'
 const LS_TOKEN = 'discogs_token'
@@ -34,6 +34,7 @@ export default function App() {
   const [overrides, setOverrides] = useState(loadOverrides)
   const [playlists, setPlaylists] = useState(loadPlaylists)
   const [tags, setTags] = useState(loadTags)
+  const [tagColors, setTagColors] = useState(loadTagColors)
   const [showPlaylist, setShowPlaylist] = useState(false)
   const [playContext, setPlayContext] = useState(null)
 
@@ -56,6 +57,7 @@ export default function App() {
 
   function handleTagsChange() {
     setTags(loadTags())
+    setTagColors(loadTagColors())
   }
 
   function handleSaveSettings(newCreds) {
@@ -159,6 +161,7 @@ export default function App() {
           onTogglePlaylist={() => setShowPlaylist(p => !p)}
           tags={tags}
           onTagsChange={handleTagsChange}
+          tagColors={tagColors}
         />
 
         {selectedRelease && (
@@ -175,6 +178,7 @@ export default function App() {
             onPlaylistsChange={handlePlaylistsChange}
             tags={tags}
             onTagsChange={handleTagsChange}
+            tagColors={tagColors}
           />
         )}
 

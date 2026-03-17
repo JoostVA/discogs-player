@@ -1,8 +1,8 @@
 import { makeOverrideKey } from '../services/overrides'
-import { getTrackTags, removeTag, getAllTags } from '../services/tags'
+import { getTrackTags, removeTag, getAllTags, getTagColor } from '../services/tags'
 import TagInput from './TagInput'
 
-export default function TrackList({ tracks, currentTrack, isPlaying, overrideKeys, releaseId, onPlay, onTogglePlay, tags, onTagsChange }) {
+export default function TrackList({ tracks, currentTrack, isPlaying, overrideKeys, releaseId, onPlay, onTogglePlay, tags, onTagsChange, tagColors }) {
   const headings = tracks.filter(t => t.type_ === 'heading')
   const hasHeadings = headings.length > 0
   const tagsEnabled = tags !== undefined && onTagsChange !== undefined
@@ -67,6 +67,10 @@ export default function TrackList({ tracks, currentTrack, isPlaying, overrideKey
               <div className="track-list__tags">
                 {trackTags.map(tag => (
                   <span className="tag-chip" key={tag}>
+                    <span
+                      className="tag-dot tag-dot--sm"
+                      style={{ background: getTagColor(tagColors, tag) }}
+                    />
                     {tag}
                     <button
                       className="tag-chip__remove"

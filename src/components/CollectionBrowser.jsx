@@ -161,7 +161,7 @@ function StyleMultiSelect({ options, selected, onChange }) {
 }
 
 // ── Main component ────────────────────────────────────────────
-export default function CollectionBrowser({ username, token, activeReleaseId, onSelectRelease, onSettingsClick, playlists, onPlaylistsChange, showPlaylist, onTogglePlaylist, tags, onTagsChange }) {
+export default function CollectionBrowser({ username, token, activeReleaseId, onSelectRelease, onSettingsClick, playlists, onPlaylistsChange, showPlaylist, onTogglePlaylist, tags, onTagsChange, tagColors }) {
   const [allReleases, setAllReleases] = useState([])
   const [loading, setLoading]   = useState(false)
   const [loadDone, setLoadDone] = useState(false)
@@ -409,6 +409,7 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
             onChange={setFilterTags}
             tags={tags ?? {}}
             onTagsChange={onTagsChange}
+            tagColors={tagColors}
           />
         </div>
 
@@ -467,6 +468,7 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
               playlists={playlists}
               onPlaylistsChange={onPlaylistsChange}
               tags={tags}
+              tagColors={tagColors}
             />
           ))}
           {pageReleases.length === 0 && !loading && (

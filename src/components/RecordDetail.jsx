@@ -11,7 +11,7 @@ export default function RecordDetail({
   release, token, currentTrack,
   overrides, isPlaying, onPlay, onTogglePlay, onClose,
   playlists, onPlaylistsChange,
-  tags, onTagsChange,
+  tags, onTagsChange, tagColors,
 }) {
   const [details, setDetails] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -133,6 +133,7 @@ export default function RecordDetail({
             onTogglePlay={onTogglePlay}
             tags={tags}
             onTagsChange={onTagsChange}
+            tagColors={tagColors}
           />
         )}
       </div>
