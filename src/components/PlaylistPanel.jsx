@@ -179,7 +179,7 @@ function PlaylistTrackList({ item, token, currentTrack, isPlaying, overrides, on
               onClick={() => onSelectTrack(isSelected ? null : track)}
               title={isSelected ? 'Deselect track for set' : 'Select track for set'}
             >
-              {isSelected ? '★' : '☆'}
+              {isSelected ? '☑' : '☐'}
             </button>
           </li>
         )

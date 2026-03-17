@@ -1846,7 +1846,7 @@ a:hover { text-decoration: underline; }
 }
 
 .playlist-tracklist__select-btn {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--text-dim);
   width: 22px;
   height: 22px;
