@@ -60,6 +60,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   const queryInputRef = useRef(null)
   const hasStartedRef = useRef(false)   // true once YT fires "playing" (state 1)
   const onEndedRef = useRef(onEnded)    // always points to latest onEnded callback
+  const videoIdRef = useRef(videoId)    // always tracks latest videoId without triggering effects
 
   const overrideKey = track && albumInfo?.releaseId
     ? makeOverrideKey(albumInfo.releaseId, track)
@@ -69,7 +70,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   useEffect(() => {
     if (!track || !ytKey) return
 
-    const trackKey = `${track.title}_${albumInfo?.artist}`
+    const trackKey = `${albumInfo?.releaseId ?? ''}_${track.position ?? ''}_${track.title}_${albumInfo?.artist ?? ''}`
     if (prevTrackRef.current === trackKey) return
     prevTrackRef.current = trackKey
 
@@ -108,8 +109,9 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
     setIsOverridden(!!overrides?.[overrideKey])
   }, [overrides, overrideKey])
 
-  // ── Keep onEndedRef current ──────────────────────────────────
+  // ── Keep refs current ────────────────────────────────────────
   useEffect(() => { onEndedRef.current = onEnded }, [onEnded])
+  useEffect(() => { videoIdRef.current = videoId }, [videoId])
 
   // ── Preload the YT IFrame API on mount ───────────────────────
   useEffect(() => { loadYTApi() }, [])
@@ -128,8 +130,13 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
         // Player already exists — just swap the video
         ytPlayerRef.current.loadVideoById(videoId)
       } else {
-        // Create a fresh player inside the container div
-        ytPlayerRef.current = new window.YT.Player(playerContainerRef.current, {
+        // Give YouTube a fresh inner div to replace with its iframe.
+        // We must NOT pass playerContainerRef.current directly because
+        // YT.Player replaces the passed element in the DOM — removing it
+        // from its parent, which breaks React's insertBefore calls.
+        const ytHost = document.createElement('div')
+        playerContainerRef.current.appendChild(ytHost)
+        ytPlayerRef.current = new window.YT.Player(ytHost, {
           videoId,
           width: '100%',
           height: '100%',
@@ -160,12 +167,16 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   }, [])
 
   // ── Play / pause via YT Player API ───────────────────────────
+  // Only depends on isPlaying — videoId changes are handled by loadVideoById
+  // (which auto-plays), so we must NOT call playVideo() when videoId changes
+  // or we risk restarting the old ended video before the new one loads.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const player = ytPlayerRef.current
-    if (!player?.playVideo || !videoId) return
+    if (!player?.playVideo || !videoIdRef.current) return
     if (isPlaying) player.playVideo()
     else player.pauseVideo()
-  }, [isPlaying, videoId])
+  }, [isPlaying])
 
   // ── Close picker on click-outside ───────────────────────────
   useEffect(() => {
