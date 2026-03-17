@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { streamCollection } from '../services/discogs'
+import { getReleaseTags } from '../services/tags'
 import RecordCard from './RecordCard'
+import TagFilter from './TagFilter'
 
 const PAGE_SIZE = 25
 
@@ -159,7 +161,7 @@ function StyleMultiSelect({ options, selected, onChange }) {
 }
 
 // ── Main component ────────────────────────────────────────────
-export default function CollectionBrowser({ username, token, activeReleaseId, onSelectRelease, onSettingsClick, playlists, onPlaylistsChange, showPlaylist, onTogglePlaylist }) {
+export default function CollectionBrowser({ username, token, activeReleaseId, onSelectRelease, onSettingsClick, playlists, onPlaylistsChange, showPlaylist, onTogglePlaylist, tags, onTagsChange }) {
   const [allReleases, setAllReleases] = useState([])
   const [loading, setLoading]   = useState(false)
   const [loadDone, setLoadDone] = useState(false)
@@ -171,6 +173,7 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
   const [sortOrder, setSortOrder]   = useState('asc')
   const [filterStyles, setFilterStyles] = useState(new Set()) // multi-select
   const [filterYear, setFilterYear] = useState('')
+  const [filterTags, setFilterTags] = useState(new Set())
   const [searchQuery, setSearchQuery] = useState('')
 
   // Random picker
@@ -221,6 +224,15 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
     return [...set].sort((a, b) => b - a)
   }, [allReleases])
 
+  // All tags that appear on any release in the current collection
+  const allTagOptions = useMemo(() => {
+    const set = new Set()
+    allReleases.forEach(r =>
+      getReleaseTags(tags ?? {}, r.basic_information.id).forEach(t => set.add(t))
+    )
+    return [...set].sort()
+  }, [allReleases, tags])
+
   // Filter → sort
   const filteredSorted = useMemo(() => {
     let result = allReleases
@@ -230,8 +242,13 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
       )
     if (filterYear)
       result = result.filter(r => r.basic_information.year === Number(filterYear))
+    if (filterTags.size > 0)
+      result = result.filter(r => {
+        const rt = new Set(getReleaseTags(tags ?? {}, r.basic_information.id))
+        return [...filterTags].every(t => rt.has(t))  // AND logic
+      })
     return sortReleases(result, sortBy, sortOrder)
-  }, [allReleases, filterStyles, filterYear, sortBy, sortOrder])
+  }, [allReleases, filterStyles, filterYear, filterTags, tags, sortBy, sortOrder])
 
   // Search within filtered+sorted results
   const searchResults = useMemo(() => {
@@ -249,14 +266,14 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
   }, [filteredSorted, searchQuery])
 
   // Reset to page 1 whenever filter/sort/search changes
-  useEffect(() => { setPage(1) }, [filterStyles, filterYear, sortBy, sortOrder, searchQuery])
+  useEffect(() => { setPage(1) }, [filterStyles, filterYear, filterTags, sortBy, sortOrder, searchQuery])
 
   // Client-side pagination
   const totalPages   = Math.max(1, Math.ceil(searchResults.length / PAGE_SIZE))
   const currentPage  = Math.min(page, totalPages)
   const pageReleases = searchResults.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  const isFiltered = filterStyles.size > 0 || filterYear
+  const isFiltered = filterStyles.size > 0 || filterYear || filterTags.size > 0
   const isSearching = searchQuery.trim().length > 0
 
   function handlePickRandom() {
@@ -384,10 +401,21 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
           </select>
         </div>
 
+        <div className="collection__toolbar-group">
+          <span className="collection__toolbar-label">Tags</span>
+          <TagFilter
+            options={allTagOptions}
+            selected={filterTags}
+            onChange={setFilterTags}
+            tags={tags ?? {}}
+            onTagsChange={onTagsChange}
+          />
+        </div>
+
         {isFiltered && (
           <button
             className="collection__clear-filters"
-            onClick={() => { setFilterStyles(new Set()); setFilterYear('') }}
+            onClick={() => { setFilterStyles(new Set()); setFilterYear(''); setFilterTags(new Set()) }}
           >
             ✕ Clear
           </button>
@@ -438,6 +466,7 @@ export default function CollectionBrowser({ username, token, activeReleaseId, on
               onClick={onSelectRelease}
               playlists={playlists}
               onPlaylistsChange={onPlaylistsChange}
+              tags={tags}
             />
           ))}
           {pageReleases.length === 0 && !loading && (

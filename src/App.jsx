@@ -6,6 +6,7 @@ import PlaylistPanel from './components/PlaylistPanel'
 import Player from './components/Player'
 import { loadOverrides } from './services/overrides'
 import { loadPlaylists } from './services/playlists'
+import { loadTags } from './services/tags'
 
 const LS_USERNAME = 'discogs_username'
 const LS_TOKEN = 'discogs_token'
@@ -32,6 +33,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [overrides, setOverrides] = useState(loadOverrides)
   const [playlists, setPlaylists] = useState(loadPlaylists)
+  const [tags, setTags] = useState(loadTags)
   const [showPlaylist, setShowPlaylist] = useState(false)
   const [playContext, setPlayContext] = useState(null)
 
@@ -50,6 +52,10 @@ export default function App() {
 
   function handlePlaylistsChange() {
     setPlaylists(loadPlaylists())
+  }
+
+  function handleTagsChange() {
+    setTags(loadTags())
   }
 
   function handleSaveSettings(newCreds) {
@@ -151,6 +157,8 @@ export default function App() {
           onPlaylistsChange={handlePlaylistsChange}
           showPlaylist={showPlaylist}
           onTogglePlaylist={() => setShowPlaylist(p => !p)}
+          tags={tags}
+          onTagsChange={handleTagsChange}
         />
 
         {selectedRelease && (
@@ -165,6 +173,8 @@ export default function App() {
             onClose={handleCloseDetail}
             playlists={playlists}
             onPlaylistsChange={handlePlaylistsChange}
+            tags={tags}
+            onTagsChange={handleTagsChange}
           />
         )}
 
