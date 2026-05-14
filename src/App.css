@@ -2561,3 +2561,190 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 .tag-manager__btn--delete:hover { color: var(--danger); }
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE  (≤ 640 px)
+   Desktop styles are untouched — everything here is an override.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── CSS variable overrides ─────────────────────────────── */
+  :root {
+    --player-h: 70px;
+  }
+
+  /* ── Single-panel overlay layout ───────────────────────── */
+  /*
+     On mobile all three panels (collection, detail, playlist)
+     are stacked at position: absolute; inset: 0 inside app-main.
+     Higher z-index wins — no side-by-side, no fixed widths.
+  */
+  .app-main {
+    position: relative;
+  }
+
+  .collection {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-right: none;
+  }
+
+  .record-detail {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;       /* override --detail-w: 380px */
+    border-right: none;
+  }
+
+  .playlist-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;       /* override --playlist-w: 360px */
+    border-left: none;
+  }
+
+  /* ── Collection header ──────────────────────────────────── */
+  .collection__header {
+    padding: 12px 16px;
+  }
+
+  .collection__title {
+    font-size: 0.95rem;
+  }
+
+  /* ── Toolbar ────────────────────────────────────────────── */
+  .collection__toolbar {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  .collection__toolbar-sep {
+    display: none;
+  }
+
+  .collection__select {
+    max-width: 100px;
+    font-size: 0.78rem;
+  }
+
+  /* ── Album grid ─────────────────────────────────────────── */
+  .collection__grid {
+    padding: 12px;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  /* ── Record card ────────────────────────────────────────── */
+  /* Disable hover-lift (sticky on touch screens) */
+  .record-card:hover {
+    transform: none;
+  }
+
+  /* Always show the "add to playlist" button (no hover on touch) */
+  .add-to-playlist-btn {
+    opacity: 1;
+  }
+
+  /* ── Record detail ──────────────────────────────────────── */
+  .record-detail__header {
+    padding: 14px 16px 12px;
+    gap: 12px;
+  }
+
+  .record-detail__cover {
+    width: 68px;
+    height: 68px;
+  }
+
+  /* Make close (✕) button a comfortable tap target */
+  .record-detail__close {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Track list ─────────────────────────────────────────── */
+  /* Bigger tap targets for play buttons */
+  .track-list__play-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.75rem;
+  }
+
+  .track-list__row {
+    grid-template-columns: 28px 34px 1fr auto;
+    padding: 10px 12px 10px 12px;
+    gap: 6px;
+  }
+
+  .track-list__tags {
+    padding: 2px 12px 8px 76px; /* align under title column */
+  }
+
+  /* ── Player bar ─────────────────────────────────────────── */
+  .player-bar {
+    height: auto;
+    min-height: 70px;
+  }
+
+  /* Compact video — still in DOM so audio plays, just smaller */
+  .player-bar__video-wrap {
+    width: 110px;
+    min-height: 70px;
+    flex-shrink: 0;
+  }
+
+  /* Hide the override/URL panel — too cramped on mobile */
+  .player-bar__override {
+    display: none;
+  }
+
+  .player-bar__info {
+    padding: 0 12px;
+    border-right: none;   /* video section acts as right boundary */
+  }
+
+  .player-bar__cover {
+    width: 40px;
+    height: 40px;
+  }
+
+  .player-bar__artist {
+    font-size: 0.68rem;
+  }
+
+  .player-bar__track {
+    font-size: 0.82rem;
+  }
+
+  .player-bar__album {
+    display: none; /* too cramped at 70px height */
+  }
+
+  /* Override strip (below video) — hide on mobile */
+  .player__override-strip {
+    display: none;
+  }
+
+  /* ── Dropdowns: cap width so they don't overflow screen ─── */
+  .style-ms__dropdown,
+  .tag-ms__dropdown {
+    max-width: calc(100vw - 24px);
+  }
+
+  /* ── Pagination ─────────────────────────────────────────── */
+  .pagination {
+    padding: 12px 16px;
+  }
+
+  /* ── Settings card ──────────────────────────────────────── */
+  .settings-card {
+    padding: 28px 20px;
+  }
+}
