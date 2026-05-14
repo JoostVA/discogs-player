@@ -1232,6 +1232,9 @@ a:hover { text-decoration: underline; }
   padding-top: 2px;
 }
 
+/* Expand button hidden on desktop — only shown via mobile media query */
+.player-bar__expand-btn { display: none; }
+
 /* ── Utilities ────────────────────────────────────────────── */
 .spinner-wrap {
   display: flex;
@@ -2707,7 +2710,7 @@ a:hover { text-decoration: underline; }
 
   .player-bar__info {
     padding: 0 12px;
-    border-right: none;   /* video section acts as right boundary */
+    border-right: none;
   }
 
   .player-bar__cover {
@@ -2730,6 +2733,55 @@ a:hover { text-decoration: underline; }
   /* Override strip (below video) — hide on mobile */
   .player__override-strip {
     display: none;
+  }
+
+  /* Expand/collapse button — mobile only */
+  .player-bar__expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .player-bar__expand-btn:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
+
+  /* ── Expanded video mode ────────────────────────────────── */
+  .player-bar--video-expanded {
+    flex-direction: column;
+    height: auto;
+  }
+
+  /* Full-width 16:9 video on top */
+  .player-bar--video-expanded .player-bar__video-wrap {
+    width: 100%;
+    height: 56.25vw; /* 16:9 */
+    min-height: unset;
+    order: -1;       /* video above info strip */
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Compact info strip below the video */
+  .player-bar--video-expanded .player-bar__info {
+    min-height: 60px;
+    border-top: none;
+    padding: 0 12px;
+  }
+
+  .player-bar--video-expanded .player-bar__album {
+    display: block; /* room for it now */
+    font-size: 0.72rem;
   }
 
   /* ── Dropdowns: cap width so they don't overflow screen ─── */

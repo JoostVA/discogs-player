@@ -43,6 +43,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isOverridden, setIsOverridden] = useState(false)
+  const [videoExpanded, setVideoExpanded] = useState(false)
 
   // Picker state
   const [showPicker, setShowPicker] = useState(false)
@@ -268,7 +269,7 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
   const trackDurationSec = parseTrackDuration(track?.duration)
 
   return (
-    <div className="player-bar">
+    <div className={`player-bar${videoExpanded ? ' player-bar--video-expanded' : ''}`}>
       {/* ── Left: track info ── */}
       <div className="player-bar__info">
         <img
@@ -288,6 +289,14 @@ export default function Player({ track, albumInfo, ytKey, isPlaying, overrides, 
             </span>
           )}
         </div>
+        {/* Expand/collapse button — only visible on mobile via CSS */}
+        <button
+          className="player-bar__expand-btn"
+          onClick={() => setVideoExpanded(v => !v)}
+          title={videoExpanded ? 'Collapse video' : 'Expand video'}
+        >
+          {videoExpanded ? '▼' : '▲'}
+        </button>
       </div>
 
       {/* ── Center: video ── */}
