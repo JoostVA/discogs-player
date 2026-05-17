@@ -2799,4 +2799,24 @@ a:hover { text-decoration: underline; }
   .settings-card {
     padding: 28px 20px;
   }
+
+  /* ── iOS safe-area insets (home indicator / rounded corners) ── */
+  /* Player bar is the bottom-most element when a track is playing */
+  .player-bar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* When no track is playing, the grid/detail/playlist panel sits at
+     the bottom — pad them so content isn't hidden behind the indicator */
+  .collection__grid {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .record-detail__tracks {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .playlist-panel {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
